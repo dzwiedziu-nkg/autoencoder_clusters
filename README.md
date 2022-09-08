@@ -1,0 +1,1 @@
+Ściągnąć: https://download.nkg-mn.com/credo/cache.zip i rozpakować tu do katalogu głównego.
