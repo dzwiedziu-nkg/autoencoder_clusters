@@ -13,7 +13,7 @@ def load_from_file(fn):
     return pickle.loads(open(fn, "rb").read())
 
 
-def load_data(use_dots=False, use_tracks=False, use_worms=False, use_artefacts=False):
+def load_data(use_dots=False, use_tracks=False, use_worms=False, use_artefacts=False, cut_to_mnist=True):
     w, h = 60, 60
     w1 = int((w - 28) / 2)
     h1 = int((h - 28) / 2)
@@ -25,8 +25,12 @@ def load_data(use_dots=False, use_tracks=False, use_worms=False, use_artefacts=F
 
     def append_stack(pickle_fn, no):
         test, train = load_from_file(pickle_fn)
-        x_test_stack.append(test[:, w1:w1 + 28, h1:h1 + 28] * 255)
-        x_train_stack.append(train[:, w1:w1 + 28, h1:h1 + 28] * 255)
+        if cut_to_mnist:
+            x_test_stack.append(test[:, w1:w1 + 28, h1:h1 + 28] * 255)
+            x_train_stack.append(train[:, w1:w1 + 28, h1:h1 + 28] * 255)
+        else:
+            x_test_stack.append(test[:, :, :] * 255)
+            x_train_stack.append(train[:, :, :] * 255)
 
         y_test = np.ones(test.shape[0]) * no
         y_train = np.ones(train.shape[0]) * no
