@@ -1,6 +1,11 @@
 import pickle
+from math import ceil
+
 import numpy as np
-from sklearn.preprocessing import normalize
+from matplotlib import pyplot as plt
+from scipy.ndimage import rotate
+from skimage import filters
+from skimage.measure import regionprops
 
 
 DOTS_DST = 'cache/dots_v2.pickle'
@@ -53,3 +58,53 @@ def load_data(use_dots=False, use_tracks=False, use_worms=False, use_artefacts=F
     y_test = np.hstack(y_test_stack)
     y_train = np.hstack(y_train_stack)
     return (x_train, y_train), (x_test, y_test)
+
+
+def plot_images(images, start_i=0, max_images=None):
+    cols = 100
+    rows = 10
+    imgs = cols * rows
+
+    if max_images is None:
+        max_images = len(images) - start_i
+    to_plot = min(max_images, len(images) - start_i)
+
+    if to_plot > imgs:
+        ploted = 0
+        while ploted < to_plot:
+            plot_images(images, start_i + ploted, imgs)
+            ploted += imgs
+        return
+
+    cols = min(cols, ceil(to_plot / rows))
+
+    plt.figure(figsize=(rows * 2, cols * 2))
+    for i in range(0, to_plot):
+        ax = plt.subplot(cols, rows, i + 1)
+        plt.imshow(images[start_i + i].reshape(60, 60))
+        plt.gray()
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+    plt.show()
+
+
+def normalize_rotation(image):
+    values = []
+
+    img = image.astype(np.uint8)
+    for j in range(0, 180):
+        img2 = rotate(img, j, reshape=False)
+        sums2 = np.sum(img2, axis=1)
+        values.append([j, np.max(sums2)])
+    s4 = sorted(values, key=lambda x: (-x[1]))
+    return rotate(img, s4[0][0], reshape=False)
+
+
+def normalize_translation(image):
+    threshold_value = filters.threshold_otsu(image)
+    labeled_foreground = (image > threshold_value).astype(int)
+    properties = regionprops(labeled_foreground, image)
+
+    rolled = np.roll(image, round(30-properties[0].centroid[0]), axis=0)
+    rolled = np.roll(rolled, round(30-properties[0].centroid[1]), axis=1)
+    return rolled
